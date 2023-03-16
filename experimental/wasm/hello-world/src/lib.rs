@@ -109,26 +109,22 @@ pub unsafe fn my_alloc(size: usize) -> *mut u8 {
 
 #[no_mangle]
 pub extern "C" fn greet(s: *mut u8, len: usize) {
-    //let mut buf = std::slice::from_raw_parts(s, len);
+
+    let strjson = "{name:1}";
+
     unsafe {
-        let s1 = (s as usize +len)as *mut u8;
-        *s1 = '!' as u8 ;
-        let s1 = (s as usize +len+1)as *mut u8;
-        *s1 = '!' as u8 ;
-        let s1 = (s as usize +len+2)as *mut u8;
-        *s1 = '!' as u8 ;
-        let s1 = (s as usize +len+3)as *mut u8;
-        *s1 = '*' as u8 ;
+        let mut i = 0;
+        for c in strjson.chars() {
+           let si = (s as usize + i )as *mut u8;
+            *si = c as u8 ;
+            i += 1;
+        }
     }
-    //let s = std::str::from_utf8(unsafe { std::slice::from_raw_parts(s, len) }).unwrap();
-    //s.to_string().push_str("!!!!!!!!!");
-//    println!("Hello, {}!", s)
 
 }
 
 #[no_mangle]
 pub extern "C" fn output(s: *mut u8, len: usize) {
-    //let mut buf = std::slice::from_raw_parts(s, len);
     unsafe {
         *s = 'f' as u8 ;
         let s1 = (s as usize +1)as *mut u8;
