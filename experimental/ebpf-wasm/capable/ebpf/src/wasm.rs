@@ -1,15 +1,11 @@
 use wasmtime::*;
+use wasmtime_wasi::WasiCtx;
+use wasmtime_wasi::sync::WasiCtxBuilder;
 use std::error::Error;
 use std::marker;
 
-
-//TODO: move this handle to wasm
 pub struct WasmInstance<T>{
-    engine: Engine,
-    module: Module,
-  //  linker: Linker<()>,
-    pub store: Store<()>,
-    instance: Instance,
+    pub store: Store<WasiCtx>,
     memory: Memory,
     input_pointer: i32,
     output_pointer: i32,
@@ -21,26 +17,26 @@ pub struct WasmInstance<T>{
 impl<T> WasmInstance<T> {
     pub fn new() -> WasmInstance<T>{
         let engine = Engine::default();
-        //let module = Module::from_file(&engine, "target/wasm32-unknown-unknown/debug/hello_world.wasm").unwrap();
-        let module = Module::from_file(&engine, "target/wasm32-wasi/debug/hello_world.wasm").unwrap();
-       // let mut linker = Linker::new(&engine);
-        let mut store = Store::new(&engine, ());
-        let instance = Instance::new(&mut store, &module,&[]).unwrap();
-        //let instance = linker.instantiate(&mut store, &module).unwrap();
+        let mut linker = Linker::new(&engine);
+        wasmtime_wasi::add_to_linker(&mut linker, |s| s).unwrap();
+
+        let wasi = WasiCtxBuilder::new()
+        .inherit_stdio()
+        .inherit_args().unwrap()
+        .build();
+        let mut store = Store::new(&engine, wasi);
+        let module = Module::from_file(&engine, "target/wasm32-wasi/debug/capable-wasm.wasm").unwrap();
+        let instance = linker.instantiate(&mut store, &module).unwrap();
+        linker.instance(&mut store, "", instance).unwrap();
+
         let memory = instance.get_memory(&mut store,"memory")
         .ok_or(anyhow::format_err!("failed to find `memory` export")).unwrap();
         let malloc = instance.get_typed_func::<i32, i32>(&mut store, "my_alloc").unwrap();
         let run_handler = instance.get_typed_func::<(i32,i32,i32,i32), i32>(&mut store, "run_handler").unwrap();
         let input_pointer = malloc.call(& mut store,0).unwrap();
         let output_pointer = malloc.call(& mut store,65536).unwrap();
-       // linker.func_wrap("global", "hello", || {} )?;
-        //let linker = Arc::new(linker); // "finalize" the linker
         WasmInstance {
-            engine,
-            module,
-          //  linker,
             store,
-            instance,
             memory,
             input_pointer,
             output_pointer,
@@ -51,9 +47,9 @@ impl<T> WasmInstance<T> {
     
     pub fn write_data_to_wasm(&mut self,input : &[u8]){
         let input_size:i32 = input.len().try_into().unwrap();
-        self.memory.grow(&mut self.store, input_size.try_into().unwrap());
+        let _ = self.memory.grow(&mut self.store, input_size.try_into().unwrap());
         let input_offset = self.input_pointer.try_into().unwrap();
-        self.memory.write(&mut self.store,input_offset,input);
+        let _ = self.memory.write(&mut self.store,input_offset,input);
     }
 
     pub fn read_from_wasm(&self, mut output_size: usize)->String{

@@ -1,12 +1,8 @@
 use std::alloc::{alloc, Layout};
-use time::macros::format_description;
-use time::OffsetDateTime;
-use std::str::FromStr;
-use plain::Plain;
-use clap::Parser;
-use phf::phf_map;
-use serde_json::{Value, Map};
+use chrono::{Local};
 
+use plain::Plain;
+use phf::phf_map;
 
 mod capable;
 
@@ -73,51 +69,14 @@ pub unsafe extern "C" fn run_handler(extra_fields: bool,input: *mut u8, output: 
     plain::copy_from_bytes(&mut event, data).expect("Data buffer was too short");
     let output_str = _handle_event(extra_fields, event);
     let out_len = output_str.chars().count();
-    output_str.as_ptr().copy_to(output,10);
-
-    10
-    //out_len
-    /*
-   // let input_str = std::str::from_utf8(
-    let input_u8 :&[u8]= std::slice::from_raw_parts(input, input_len);
-
-    
-   // let input_str = input[..input_len];
-    //let input_str = std::ptr::read(input);
-    let parsed: Value = serde_json::from_slice(input_u8).unwrap();
-    let obj: Map<String, Value> = parsed.as_object().unwrap().clone();
-
-    let now = if let Ok(now) = OffsetDateTime::now_local() {
-        let format = format_description!("[hour]:[minute]:[second]");
-        now.format(&format)
-            .unwrap_or_else(|_| "00:00:00".to_string())
-    } else {
-        "00:00:00".to_string()
-    };
-
-    let output_str = format!(
-        "{:9} {:6} {:<6} {:<16} {:<4} {:<20} {:<6}",
-        now, obj["uid"], obj["tgid"], obj["comm"], obj["cap"], obj["cap"], obj["audit"]
-    );
-    let out_len = output_str.len();
     output_str.as_ptr().copy_to(output,out_len);
-
     out_len
 
-    //let s = std::str::from_utf8(unsafe { std::slice::from_raw_parts(s, len) }).unwrap();
-    //s.to_string().push_str("!!!!!!!!!");
-//    println!("Hello, {}!", s)*/
 }
 
 fn _handle_event(extra_fields: bool, event: capable_bss_types::event) -> String{
-    let now = if let Ok(now) = OffsetDateTime::now_local() {
-        let format = format_description!("[hour]:[minute]:[second]");
-        now.format(&format)
-            .unwrap_or_else(|_| "00:00:00".to_string())
-    } else {
-     "00:00:00".to_string()
-    };
-    // let now = "00:00:00".to_string();
+
+    let now = Local::now().format("%H:%m:%S").to_string();
 
     let comm_str = std::str::from_utf8(&event.comm)
         .unwrap()
