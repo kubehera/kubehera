@@ -25,7 +25,7 @@ impl<T> WasmInstance<T> {
         .inherit_args().unwrap()
         .build();
         let mut store = Store::new(&engine, wasi);
-        let module = Module::from_file(&engine, "target/wasm32-wasi/debug/capable-wasm.wasm").unwrap();
+        let module = Module::from_file(&engine, "target/wasm32-wasi/debug/capable_wasm.wasm").unwrap();
         let instance = linker.instantiate(&mut store, &module).unwrap();
         linker.instance(&mut store, "", instance).unwrap();
 
