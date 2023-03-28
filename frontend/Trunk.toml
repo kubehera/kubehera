@@ -1,0 +1,14 @@
+[[proxy]]
+backend = "http://localhost:3000/api"
+#backend = "https://play.yew.rs/api"
+
+[serve]
+# The address to serve on.
+address = "0.0.0.0"
+# The port to serve on.
+port = 8080
+
+[[hook]]
+stage = "build"
+command = "npm"
+command_arguments = ["run", "build:tailwind"]

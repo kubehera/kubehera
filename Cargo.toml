@@ -1,5 +1,6 @@
 [workspace]
 members = [
  "agent",
- "ui",
+ "frontend",
+ "src-tauri",
 ]
