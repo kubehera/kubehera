@@ -4,9 +4,11 @@ use crate::components::login::*;
 
 #[derive(Clone, Routable, PartialEq)]
 pub enum Route {
-    #[at("/login")]
-    Login,
     #[at("/")]
+    Login,
+    //#[at("/login")]
+    //Login,
+    #[at("/home")]
     Home,
     #[at("/secure")]
     Secure,
@@ -29,6 +31,13 @@ pub fn secure() -> Html {
 }
 
 pub fn switch(routes: Route) -> Html {
+    //let user = match use_user() {
+    //    Some(user) => user,
+        // Redirects to the login page when user is `None`.
+    //    None => return html! {
+    //        <Redirect<Route> to={Route::Login}/>
+    //    },
+    //};
     match routes {
         Route::Login => html! { <Login /> },
         Route::Home => html! { <h1>{ "Home" }</h1> },

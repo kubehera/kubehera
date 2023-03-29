@@ -1,62 +1,14 @@
-use gloo::console::log;
-use wasm_bindgen::JsCast;
-use web_sys::HtmlInputElement;
 use yew::prelude::*;
-use yew_router::prelude::*;
-use yewdux::prelude::*;
 
-use crate::{api::login::api_login,Route};
-use super::store::YewduxStore;
+use crate::components::{container::AppContext};
 
 #[function_component(Login)]
-pub fn view() -> Html {
-    let (store,dispatch) = use_store::<YewduxStore>();
-    let navigator = use_navigator().unwrap();
-    let handle_form_submit = {
-        let clone_dispatch = dispatch.clone();
-        dispatch
-            .reduce_mut_callback_with(move|state, event: SubmitEvent| {
-                event.prevent_default();
-                let username = state.username.clone();
-                let password = state.password.clone();
-                let dispatch = clone_dispatch.clone();
-
-                let navigator = navigator.clone();
-                wasm_bindgen_futures::spawn_local(async move {
-                    let response = api_login(username, password).await;
-                    let token = response.token;
-                    dispatch.reduce_mut(move |state| {
-                      state.token = token;
-                      navigator.push(&Route::Home)
-                    });
-                });
-            })
-    };
-    let handle_username_change = dispatch
-        .reduce_mut_callback_with(|state, event: Event| {
-            let username = event
-                .target()
-                .unwrap()
-                .unchecked_into::<HtmlInputElement>()
-                .value();
-            state.username = username;
-        });
-
-    let handle_password_change = dispatch
-        .reduce_mut_callback_with(|state, event: Event| {
-            let password = event
-                .target()
-                .unwrap()
-                .unchecked_into::<HtmlInputElement>()
-                .value();
-            state.password = password;
-        });
-
-    let token = if let state = store {
-        state.token.clone()
-    } else {
-        String::new()
-    };
+pub fn login() -> Html {
+    // 设置网页标题
+    use_context::<AppContext>()
+        .unwrap()
+        .set_title
+        .emit("登录".into());
 
     html! {
         <div class="flex min-h-full items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -69,16 +21,16 @@ pub fn view() -> Html {
                 <a href="#" class="font-medium text-indigo-600 hover:text-indigo-500">{"start your 14-day free trial"}</a>
               </p>
             </div>
-            <form class="mt-8 space-y-6" onsubmit={handle_form_submit}>
+            <form class="mt-8 space-y-6" >// onsubmit={handle_form_submit}>
               <input type="hidden" name="remember" value="true"/>
               <div class="-space-y-px rounded-md shadow-sm">
                 <div>
                   <label for="email-address" class="sr-only">{"Email address"}</label>
-                  <input id="email-address" name="email" type="email" autocomplete="email" class="relative block w-full rounded-t-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" placeholder="Email address" onchange={handle_username_change}/>
+                  <input id="email-address" name="email" type="email" autocomplete="email" class="relative block w-full rounded-t-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" placeholder="Email address" />//onchange={handle_username_change}/>
                 </div>
                 <div>
                   <label for="password" class="sr-only">{"Password"}</label>
-                  <input id="password" name="password" type="password" autocomplete="current-password" class="relative block w-full rounded-b-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" placeholder="Password"  onchange={handle_password_change} />
+                  <input id="password" name="password" type="password" autocomplete="current-password" class="relative block w-full rounded-b-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" placeholder="Password" />// onchange={handle_password_change} />
                 </div>
               </div>
         
@@ -111,9 +63,3 @@ pub fn view() -> Html {
         </div>
     }
 }
-
-
-
-
-
-

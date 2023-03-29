@@ -1,4 +1,6 @@
 pub mod share;
+pub mod login;
+pub mod fetch;
 
 pub const BACKEND_URL: &str = match option_env!("BACKEND_URL") {
     Some(v) => v,
