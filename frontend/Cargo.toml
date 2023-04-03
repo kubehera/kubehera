@@ -13,6 +13,7 @@ js-sys = "0.3"
 web-sys = { version = "0.3", features = ["HtmlCollection"] }
 
 gloo = "0.8"
+gloo-console = "0.2.3"
 gloo-net = { version = "0.2.4", features = ["http", "json"] }
 monaco = { version = "0.2.0", features = ["yew-components"] }
 tracing-web = "0.1.2"

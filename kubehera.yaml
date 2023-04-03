@@ -1,0 +1,4 @@
+github:
+  client_id: 8b9a6e969f3ad751559f
+  client_secret: 6d81da045298844b098072a7df0f59b7e9e71711
+  redirect_uri: "http://127.0.0.1:8080/user/login/oauth"

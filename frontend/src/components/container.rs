@@ -1,4 +1,5 @@
 use gloo::net::http::Method;
+use gloo_console::log;
 use yew::prelude::*;
 use yew_router::prelude::use_navigator;
 
@@ -32,8 +33,9 @@ pub fn container(props: &Props) -> Html {
             .set_title(&format!("{content} - Blog"));
     });
 
+    let clone_navigator = navigator.clone();
     // 用于跳转到不同的页面
-    let jump = { move |route| Callback::from(move |_| navigator.push(&route)) };
+    let jump = { move |route| Callback::from(move |_| clone_navigator.push(&route)) };
 
     // 获取用户数据，并放在 Context 里以便使用
 
@@ -41,16 +43,16 @@ pub fn container(props: &Props) -> Html {
 
     {
         let user = user.clone();
-        let jump = jump.clone();
         // 在组件挂载成功时获取用户数据
         use_effect_with_deps(
             move |_| {
                 wasm_bindgen_futures::spawn_local(async move {
-                    jump(Route::Login);
-                    user.set(
-                        fetch::fetch::<User>("/api/user/info".into(), Method::GET, None, None)
-                            .await,
-                    )
+                    let fetch_user = fetch::fetch::<User>("/apis/users/info".into(), Method::GET, None, None).await;
+                    user.set(fetch_user.clone());
+                    match &fetch_user {
+                      Ok(fu) => log!("get user",fu.clone().login),
+                      Err(err) => {log!("not get user",err); navigator.push(&Route::Login)},
+                    };
                 })
             },
             (),
@@ -62,6 +64,7 @@ pub fn container(props: &Props) -> Html {
 
     html! {
         <>
+            if let Ok(user) = (*context.user).clone() {
             <nav>
                 <a onclick={
                     // 需要 clone 一下，以便我们下面多次调用这个闭包
@@ -71,15 +74,14 @@ pub fn container(props: &Props) -> Html {
                     <span>{ "Blog" }</span>
                 </a>
                 <div class="menu">
-                    if let Ok(user) = (*context.user).clone() {
                         <img src={user.avatar_url} title={format!("Hi, {}!", user.login)} style="width: 7%; border-radius: 50%; float: right;"/>
-                    } else {
-                        // 用户没有登录或者获取用户信息失败
-                        <button class="success icon-puzzle" onclick={jump(Route::Login)}>{ "登录" }</button>
-                    }
                 </div>
 
             </nav>
+            } else {
+                // 用户没有登录或者获取用户信息失败
+                //<button class="success icon-puzzle" onclick={jump(Route::Login)}>{ "登录" }</button>
+            }
 
             <ContextProvider<AppContext> {context}>
                 { for props.children.iter() }

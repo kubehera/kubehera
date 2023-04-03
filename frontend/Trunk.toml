@@ -1,6 +1,6 @@
 [[proxy]]
-rewrite = "/api/"
-backend = "http://localhost:3000/"
+#rewrite = "/apis/"
+backend = "http://localhost:3000/apis/"
 #backend = "https://play.yew.rs/"
 
 [serve]

@@ -1,6 +1,8 @@
+use gloo::net::http::Method;
 use yew::prelude::*;
 
 use crate::components::{container::AppContext};
+use crate::api::fetch;
 
 #[function_component(Login)]
 pub fn login() -> Html {
@@ -9,6 +11,27 @@ pub fn login() -> Html {
         .unwrap()
         .set_title
         .emit("登录".into());
+
+    let loading = use_state(|| true);
+    let github_url = use_state(|| Err("".into()));
+
+    {
+        let loading = loading.clone();
+        let github_url = github_url.clone();
+
+        use_effect_with_deps(
+            move |_| {
+                wasm_bindgen_futures::spawn_local(async move {
+                    github_url.set(
+                        fetch::fetch::<String>("/apis/users/oauth_url".into(), Method::GET, None, None)
+                            .await,
+                    );
+                    loading.set(false);
+                });
+            },
+            (),
+        );
+    }
 
     html! {
         <div class="flex min-h-full items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -55,9 +78,13 @@ pub fn login() -> Html {
                   {"Sign in"}
                 </button>
               </div>
-              <div style="text-align: center">
-              <a class="font-medium text-indigo-600 hover:text-indigo-500" href="https://github.com/login/oauth/authorize?client_id=8b9a6e969f3ad751559f&redirect_uri=http://127.0.0.1:8080/home">{ "使用 Github 登录" }</a>
-              </div>
+              <a class="font-medium text-indigo-600 hover:text-indigo-500" href={
+                match &*github_url {
+                  Ok(url) => url.clone(),
+                  Err(_err) => format!("")
+                }
+              }>{ "使用 Github 登录" }</a>
+              <div style="text-align: center"></div>
             </form>
           </div>
         </div>

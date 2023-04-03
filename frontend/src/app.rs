@@ -1,9 +1,13 @@
-use crate::components::{
-    article::{article_viewer::ArticleViewer, new::NewArticle},
-    container::Container,
-    home::Home,
-    not_found::NotFound,
-    user::{login::Login, oauth::OAuth},
+use crate::{
+    components::{
+        container::Container,
+    },
+    pages::{
+        article::{article_viewer::ArticleViewer, new::NewArticle},
+        user::{login::Login, oauth::OAuth},
+        not_found::NotFound,
+        home::Home,
+    },
 };
 
 use yew::prelude::*;

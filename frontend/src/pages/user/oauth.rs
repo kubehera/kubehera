@@ -47,7 +47,7 @@ pub fn oauth() -> Html {
                     message.set(
                         // 服务端会返回消息，所以用这个函数
                         fetch::fetch_without_deserialize(
-                            "/api/user/login".into(),
+                            "/apis/users/login".into(),
                             Method::POST,
                             Some(serde_json::to_string(&login.unwrap()).unwrap()),
                             // 注意 Content-Type
@@ -57,7 +57,7 @@ pub fn oauth() -> Html {
                     );
 
                     user_info.set(
-                        fetch::fetch::<User>("/api/user/info".into(), Method::GET, None, None)
+                        fetch::fetch::<User>("/apis/users/info".into(), Method::GET, None, None)
                             .await,
                     );
 

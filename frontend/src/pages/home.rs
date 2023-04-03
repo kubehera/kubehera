@@ -6,7 +6,8 @@ use yew_router::prelude::*;
 
 use crate::{
     app::Route,
-    components::{article::article_preview::ArticlePreview, card::Card, container::AppContext},
+    components::{card::Card, container::AppContext},
+    pages::{article::article_preview::ArticlePreview},
     api::fetch,
     models::article::ArticlePreview as Preview,
 };
