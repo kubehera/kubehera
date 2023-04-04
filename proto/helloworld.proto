@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+// 包名
+package helloworld;
+
+option go_package="./;helloworld";
+
+// 定义的服务名
+service Greeter {
+  // 具体的远程服务方法
+  rpc Channel (stream String) returns (stream String);
+}
+
+message String {
+	string value = 1;
+}

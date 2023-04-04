@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+ package echo;
+ 
+ option go_package="./;echo";
+
+ // EchoRequest is the request for echo.
+ message EchoRequest {
+   string message = 1;
+ }
+
+ // EchoResponse is the response for echo.
+ message EchoResponse {
+   string message = 1;
+ }
+
+ // Echo is the echo service.
+ service Echo {
+   // BidirectionalStreamingEcho is bidi streaming.
+   rpc BidirectionalStreamingEcho(stream EchoRequest) returns (stream EchoResponse) {}
+ }

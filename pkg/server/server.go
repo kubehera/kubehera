@@ -4,17 +4,21 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
+	"net"
 	"net/http"
 	rt "runtime"
 	"time"
 
 	//"github.com/cilium/cilium/pkg/k8s"
 	"github.com/emicklei/go-restful"
+	"google.golang.org/grpc"
 	"gorm.io/gorm"
 	"k8s.io/apiserver/pkg/endpoints/handlers/responsewriters"
 	"k8s.io/klog"
 
 	"kubehera/pkg/apis/user"
+	"kubehera/pkg/proto/echo"
 	"kubehera/pkg/utils/iputil"
 
 	urlruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -73,6 +77,39 @@ func (s *APIServer) installKubeheraAPIs() {
 	urlruntime.Must(user.AddToContainer(s.container, s.Config, s.DbClient))
 }
 
+type EchoServiceImpl struct{}
+
+func (p *EchoServiceImpl) BidirectionalStreamingEcho(stream echo.Echo_BidirectionalStreamingEchoServer) error {
+	for {
+		args, err := stream.Recv()
+		if err != nil {
+			if err == io.EOF {
+				return nil
+			}
+			return err
+		}
+
+		reply := &echo.EchoResponse{Message: "hello:" + args.GetMessage()}
+
+		err = stream.Send(reply)
+		if err != nil {
+			return err
+		}
+	}
+}
+
+func (s *APIServer) runGrpcServer() {
+	grpcServer := grpc.NewServer()
+	echo.RegisterEchoServer(grpcServer, new(EchoServiceImpl))
+
+	klog.V(0).Infof("Start grpc server listening on tcp:1234")
+	lis, err := net.Listen("tcp", ":1234")
+	if err != nil {
+		klog.Fatal(err)
+	}
+	grpcServer.Serve(lis)
+}
+
 func (s *APIServer) Run(ctx context.Context) (err error) {
 
 	err = s.waitForResourceSync(ctx)
@@ -87,6 +124,8 @@ func (s *APIServer) Run(ctx context.Context) (err error) {
 		<-ctx.Done()
 		_ = s.Server.Shutdown(shutdownCtx)
 	}()
+
+	go s.runGrpcServer()
 
 	klog.V(0).Infof("Start listening on %s", s.Server.Addr)
 	err = s.Server.ListenAndServe()
