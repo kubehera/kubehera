@@ -4,43 +4,36 @@ use wasmtime::*;
 
 fn main() -> Result<(),Box<dyn Error>> {
     let engine = Engine::default();
-    let module = Module::from_file(&engine,"../hello-world/target/wasm32-unknown-unknown/debug/hello_world.wasm")?;
+    let module = Module::from_file(&engine,"../../../target/wasm32-unknown-unknown/debug/hello_world.wasm")?;
     let mut store = Store::new(&engine,());
-    let instance = Instance::new(&mut store, &module,&[])?;
+    let linker = Linker::new(&engine);
+    let instance = linker.instantiate(&mut store,&module)?;
     let memory = instance.get_memory(&mut store,"memory")
-        .ok_or(anyhow::format_err!("failed to find `memory` export"))?;
-
-    let malloc_fn = instance.get_typed_func::<i32, i32>(&mut store, "my_alloc")?;
-    let greet_fn = instance.get_typed_func::<(i32,i32), ()>(&mut store, "greet")?;
-    let output_fn = instance.get_typed_func::<(i32,i32), ()>(&mut store, "output")?;
+        .ok_or(anyhow::format_err!("failed to find `memory` export")).unwrap();
 
 
-    let helloworld = b"hello world    ";
-    let size:i32 =  helloworld.len().try_into().unwrap();
-    let pointer = malloc_fn.call(&mut store,size)?;
+//Write Vec[u8] to wasm
+    let write_buffer = "Licheng".as_bytes();
+    let init_write = instance.get_typed_func::<i32, ()>(&mut store, "init_write").unwrap();
+    init_write.call(&mut store,write_buffer.len().try_into().unwrap())?;
+    let get_write_addr = instance.get_typed_func::<(), i32>(&mut store, "get_write_addr").unwrap();
+    let write_addr = get_write_addr.call(&mut store,()).unwrap();
+    memory.write(&mut store,write_addr.try_into().unwrap(),write_buffer)?;
 
-    let offset = pointer.try_into().unwrap();
-    memory.write(&mut store,offset, helloworld)?;
+//greet handler
+    let greet = instance.get_typed_func::<(), ()>(&mut store, "greet").unwrap();
+    let _ = greet.call(&mut store,()).unwrap();
 
-    memory.grow(&mut store,20)?;
-    let mut oldbuffer = [0u8; 15];
-    memory.read(&store, offset, &mut oldbuffer)?;
-    println!("{}",std::str::from_utf8(&oldbuffer).unwrap());
+//Read String from wasm
+    let get_string_len = instance.get_typed_func::<(), i32>(&mut store, "get_string_len").unwrap();
+    let len = get_string_len.call(&mut store,()).unwrap();
 
-    greet_fn.call(&mut store,(pointer,size))?;
-    let mut buffer = [0u8; 15];
-    memory.read(&store, offset, &mut buffer)?;
+    let mut read_buffer = vec![0u8; len.try_into().unwrap()];
 
-    let output_pointer = malloc_fn.call(&mut store,size)?;
-    let output_offset = output_pointer.try_into().unwrap();
-    output_fn.call(&mut store,(output_pointer,size))?;
-    let mut output_buffer = [0u8; 4];
-    
-    memory.read(&store, output_offset, &mut output_buffer)?;
-
-
-    println!("{}",std::str::from_utf8(&buffer).unwrap());
-    println!("{}",std::str::from_utf8(&output_buffer).unwrap());
+    let get_string_addr = instance.get_typed_func::<(), i32>(&mut store, "get_string_addr").unwrap();
+    let read_addr = get_string_addr.call(&mut store,()).unwrap();
+    memory.read(&mut store, read_addr.try_into().unwrap(), &mut read_buffer).unwrap();
+    println!("{}",std::str::from_utf8(&read_buffer[..]).unwrap());
 
     Ok(())
 }
