@@ -79,7 +79,11 @@ func (h *userHandler) OauthLogin(request *restful.Request, response *restful.Res
 	}
 }
 func (h *userHandler) GetUserInfo(request *restful.Request, response *restful.Response) {
-	cookie, _ := request.Request.Cookie(githubCookieName)
+	cookie, err := request.Request.Cookie(githubCookieName)
+	if err != nil {
+		response.WriteError(500, err)
+		return
+	}
 	ak := cookie.Value
 	githubUser := getGithubUserMessage(ak)
 	dbUser := user.User{}

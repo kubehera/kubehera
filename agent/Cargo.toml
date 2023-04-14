@@ -6,12 +6,20 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-wasmtime = "6.0.0"
+anyhow = "1.0.4"
+libbpf-rs = "0.20.0"
+libc = "0.2"
+plain = "0.2"
+clap = { version = "3.1", default-features = false, features = ["std", "derive"] }
+wasmtime = "7.0.0"
+wasmtime-wasi = "7.0.0"
+
 tonic = "0.9.1"
 prost = "0.11"
 tokio = { version = "1.0", features = ["rt-multi-thread", "macros"] }
 tokio-stream = { version = "0.1" }
 futures = { version = "0.3", default-features = false }
+scopeguard = "1.1.0"
  
 [build-dependencies]
 tonic-build = "0.9.1"
