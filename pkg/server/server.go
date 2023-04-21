@@ -19,6 +19,7 @@ import (
 
 	"kubehera/pkg/apis/user"
 	"kubehera/pkg/proto/echo"
+	"kubehera/pkg/proto/project"
 	"kubehera/pkg/utils/iputil"
 
 	urlruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -72,7 +73,8 @@ func (s *APIServer) PrepareRun(stopCh <-chan struct{}) error {
 
 // Install all kubesphere api groups
 // Installation happens before all informers start to cache objects, so
-//   any attempt to list objects using listers will get empty results.
+//
+//	any attempt to list objects using listers will get empty results.
 func (s *APIServer) installKubeheraAPIs() {
 	urlruntime.Must(user.AddToContainer(s.container, s.Config, s.DbClient))
 }
@@ -98,9 +100,39 @@ func (p *EchoServiceImpl) BidirectionalStreamingEcho(stream echo.Echo_Bidirectio
 	}
 }
 
+type ProjectServiceImpl struct{}
+
+func (p *ProjectServiceImpl) SyncProjects(*project.AgentStatus, project.ProjectService_SyncProjectsServer) error {
+	return nil
+}
+func (p *ProjectServiceImpl) GetProjectData(*project.Project, project.ProjectService_GetProjectDataServer) error {
+	return nil
+}
+func (p *ProjectServiceImpl) SendProjectMessage(stream project.ProjectService_SendProjectMessageServer) error {
+	for {
+		msg, err := stream.Recv()
+		if err != nil {
+			if err == io.EOF {
+				return nil
+			}
+			return err
+		}
+
+		fmt.Println(msg.GetMessage())
+	}
+
+	// TODO
+	/*	err = stream.SendAndClose("")
+		if err != nil {
+			return err
+		}*/
+	return nil
+}
+
 func (s *APIServer) runGrpcServer() {
 	grpcServer := grpc.NewServer()
 	echo.RegisterEchoServer(grpcServer, new(EchoServiceImpl))
+	project.RegisterProjectServiceServer(grpcServer, new(ProjectServiceImpl))
 
 	klog.V(0).Infof("Start grpc server listening on tcp:1234")
 	lis, err := net.Listen("tcp", ":1234")

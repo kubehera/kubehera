@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+ package project;
+ 
+ option go_package="./;project";
+
+ message Status{
+   string message = 2;
+   uint32 status  = 3;
+ }
+ // ProjectRequest is the request for project.
+ message ProjectData{
+   bytes ebpfbinary = 1;
+   bytes wasmbinary = 2;
+ }
+
+ // ProjectResponse is the response for project.
+ message ProjectMessage{
+   string name = 1;
+   string message = 2;
+   uint32 status  = 3;
+ }
+
+ message Project {
+   string name = 1;
+ }
+
+ message Projects{
+  repeated Project projects = 1;
+ }
+
+ message AgentStatus {
+  string name = 1;
+  string addr = 2;
+ }
+
+ // ProjectService is the project service.
+ service ProjectService {
+   // Deploy project.
+   rpc SyncProjects(AgentStatus) returns (stream Projects) {}
+   rpc GetProjectData(Project) returns (stream ProjectData) {}
+   rpc SendProjectMessage(stream ProjectMessage) returns (Status) {}
+ }

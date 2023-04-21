@@ -6,6 +6,7 @@ use crate::grpc::*;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
-    grpc::echo::run_grpc().await?;
+    //grpc::echo::run_grpc().await?;
+    grpc::project::run_grpc().await?;
     Ok(())
 }
