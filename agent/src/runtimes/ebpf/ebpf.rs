@@ -34,26 +34,6 @@ fn handle_lost_events(cpu: i32, count: u64) {
     eprintln!("Lost {count} events on CPU {cpu}");
 }
 
-#[derive(Debug, Copy, Clone, Parser)]
-#[clap(name = "examples", about = "Usage instructions")]
-struct Command {
-    /// verbose: include non-audit checks
-    #[clap(short, long)]
-    verbose: bool,
-    /// only trace `pid`
-    #[clap(short, long, default_value = "0")]
-    pid: u32,
-    /// extra fields: Show TID and INSETID columns
-    #[clap(short = 'x', long = "extra")]
-    extra_fields: bool,
-    /// don't repeat same info for the same `pid` or `cgroup`
-    //#[clap(long = "unique", default_value = "off")]
-    //unique_type: uniqueness,
-    /// debug output for libbpf-rs
-    #[clap(long)]
-    debug: bool,
-}
-
 fn print_banner(extra_fields: bool) {
     #[allow(clippy::print_literal)]
     if extra_fields {
@@ -72,23 +52,12 @@ fn print_banner(extra_fields: bool) {
 
 pub fn run_ebpf(tx: mpsc::Sender<ProjectMessage> ) -> Result<()> {
 
-    //let opts = Command::parse();
-
-    //let obj_path = get_test_object_path("bpf/capable.bpf.o");
     let obj_path = Path::new("ebpf/src/bpf/capable.bpf.o");
     let mut builder = ObjectBuilder::default();
-    //if opts.debug {
-        builder.debug(true);
-    //}
+    builder.debug(true);
     let open_obj = builder.open_file(obj_path).expect("failed to open object");
 
     bump_memlock_rlimit()?;
-
-    //Pass configuration to BPF
-
-    //open_obj.rodata().tool_config.tgid = opts.pid; //tgid in kernel is pid in userland
-    //open_obj.rodata().tool_config.verbose = opts.verbose;
-    //open_obj.rodata().tool_config.unique_type = opts.unique_type;
 
     let mut skel = open_obj.load()?;
     let prog = skel
@@ -103,34 +72,25 @@ pub fn run_ebpf(tx: mpsc::Sender<ProjectMessage> ) -> Result<()> {
         let _ = fs::remove_file(path);
     }
 
-    //print_banner(opts.extra_fields);
     print_banner(true);
-
 
     let mut wasm_instance:WasmInstance<()> = WasmInstance::new();
     let handle_lock = Mutex::new(true);
     let handle_event = move |_cpu: i32, data: &[u8]| {
         let _ = handle_lock.lock();
-        //let mut extra_fields = 0;
-      //  if opts.extra_fields{
         let extra_fields = 1;
-        //}
         wasm_instance.write_data_to_wasm(data);
         wasm_instance.run(extra_fields);
         let message = format!("{}",wasm_instance.read_from_wasm());
-        //tokio::spawn(
-        //tokio::spawn( async{
-	let tx2 = tx.clone();
-	let sync_code = thread::spawn(move || {
-            tx2.blocking_send(ProjectMessage{
-                name: "test".to_string(),
-                status: 0,
-                message: message.clone(),
-            }).unwrap();//.await.unwrap();
-        });
-        //);
-	sync_code.join().unwrap();
-	//println!("{}",message);
+	    let tx2 = tx.clone();
+	    let sync_code = thread::spawn(move || {
+               tx2.blocking_send(ProjectMessage{
+                   name: "test".to_string(),
+                   status: 0,
+                   message: message.clone(),
+               }).unwrap();
+           });
+	    sync_code.join().unwrap();
     };
     let map = skel.map_mut("events").expect("Failed to get perf-buffer map");
 

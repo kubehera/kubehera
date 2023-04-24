@@ -22,21 +22,8 @@ impl Project {
         }
     }
 
-/*     async fn get_message_from_ebpf(&mut self,tx: mpsc::Sender<ProjectMessage>){
-        tokio::spawn(async move {
-            while !tx.is_closed(){
-                tx.send(ProjectMessage{
-                    name: "test".to_string(),
-                    status: 0,
-                    message: format!("msg"),
-                }).await.unwrap();
-            }
-        });
-    }*/
-
     async fn send_project_message_throttle(&mut self,mut rx: mpsc::Receiver<ProjectMessage>) -> Result<(), Box<dyn Error>>{
     
-        //let rx_chan = self.rx.;
         let request = Box::pin(async_stream::stream! {
             while let Some(item) = rx.recv().await {
                 yield item;
@@ -56,25 +43,9 @@ impl Project {
         // Echo stream that sends up to `usize::MAX` requests. One request each 2s.
         // Exiting client with CTRL+C demonstrate how to distinguish broken pipe from
         // graceful client disconnection (above example) on the server side.
-       // self.get_message_from_ebpf(tx);
-/*
-       let t1 = thread::spawn(move || {
-           let _ = run_ebpf(tx);
-       });*/
         tokio::spawn(async move {
            let _ = run_ebpf(tx);
-            //self.get_message_from_ebpf(tx);
-        //    while !tx.is_closed(){
-           //     run_ebpf(tx);
-                /*
-                tx.send(ProjectMessage{
-                    name: "test".to_string(),
-                    status: 0,
-                    message: format!("msg"),
-                }).await.unwrap();*/
-          //  } 
         });
-        //let _= t1.join().unwrap();
 
         println!("\r\nBidirectional stream echo (kill client with CTLR+C):");
         self.send_project_message_throttle(rx).await?;
