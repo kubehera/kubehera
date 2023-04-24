@@ -6,9 +6,16 @@ use libbpf_rs::PerfBufferBuilder;
 use std::fs;
 use scopeguard::defer;
 use std::path::Path;
+use std::thread;
 
 use crate::runtimes::wasm::wasm::WasmInstance;
 use libbpf_rs::ObjectBuilder;
+use tokio::sync::mpsc;
+
+pub mod pb {
+    tonic::include_proto!("project");
+}
+use pb::{ProjectMessage};
 
 fn bump_memlock_rlimit() -> Result<()> {
     let rlimit = libc::rlimit {
@@ -63,16 +70,16 @@ fn print_banner(extra_fields: bool) {
 }
 
 
-fn main() -> Result<()> {
+pub fn run_ebpf(tx: mpsc::Sender<ProjectMessage> ) -> Result<()> {
 
-    let opts = Command::parse();
+    //let opts = Command::parse();
 
     //let obj_path = get_test_object_path("bpf/capable.bpf.o");
     let obj_path = Path::new("ebpf/src/bpf/capable.bpf.o");
     let mut builder = ObjectBuilder::default();
-    if opts.debug {
+    //if opts.debug {
         builder.debug(true);
-    }
+    //}
     let open_obj = builder.open_file(obj_path).expect("failed to open object");
 
     bump_memlock_rlimit()?;
@@ -96,20 +103,34 @@ fn main() -> Result<()> {
         let _ = fs::remove_file(path);
     }
 
-    print_banner(opts.extra_fields);
+    //print_banner(opts.extra_fields);
+    print_banner(true);
 
 
     let mut wasm_instance:WasmInstance<()> = WasmInstance::new();
     let handle_lock = Mutex::new(true);
     let handle_event = move |_cpu: i32, data: &[u8]| {
         let _ = handle_lock.lock();
-        let mut extra_fields = 0;
-        if opts.extra_fields{
-            extra_fields = 1;
-        }
+        //let mut extra_fields = 0;
+      //  if opts.extra_fields{
+        let extra_fields = 1;
+        //}
         wasm_instance.write_data_to_wasm(data);
         wasm_instance.run(extra_fields);
-        println!("{}",wasm_instance.read_from_wasm());
+        let message = format!("{}",wasm_instance.read_from_wasm());
+        //tokio::spawn(
+        //tokio::spawn( async{
+	let tx2 = tx.clone();
+	let sync_code = thread::spawn(move || {
+            tx2.blocking_send(ProjectMessage{
+                name: "test".to_string(),
+                status: 0,
+                message: message.clone(),
+            }).unwrap();//.await.unwrap();
+        });
+        //);
+	sync_code.join().unwrap();
+	//println!("{}",message);
     };
     let map = skel.map_mut("events").expect("Failed to get perf-buffer map");
 
