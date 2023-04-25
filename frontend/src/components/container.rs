@@ -1,7 +1,7 @@
 use gloo::net::http::Method;
 use gloo_console::log;
 use yew::prelude::*;
-use yew_router::prelude::use_navigator;
+use yew_router::prelude::{use_navigator,use_route};
 
 use crate::{app::Route, api::fetch, models::user::User};
 
@@ -23,6 +23,8 @@ pub struct AppContext {
 pub fn container(props: &Props) -> Html {
     // 用于跳转到不同的路由
     let navigator = use_navigator().unwrap();
+
+    let local_route:Route = use_route().unwrap_or_default();
 
     let set_title = Callback::from(move |content: String| {
         // 设置网页的标题
@@ -51,7 +53,8 @@ pub fn container(props: &Props) -> Html {
                     user.set(fetch_user.clone());
                     match &fetch_user {
                       Ok(fu) => log!("get user",fu.clone().login),
-                      Err(err) => {log!("not get user",err); navigator.push(&Route::Login)},
+                      Err(err) => {log!("not get user",err,local_route != Route::OAuth); 
+                                            if local_route != Route::OAuth {  navigator.push(&Route::Login)}},
                     };
                 })
             },
