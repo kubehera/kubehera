@@ -6,8 +6,7 @@ use yew_router::prelude::*;
 
 use crate::{
     app::Route,
-    components::{card::Card, container::AppContext},
-    pages::{article::article_preview::ArticlePreview},
+    components::{container::AppContext},
     api::fetch,
     models::article::ArticlePreview as Preview,
 };
@@ -80,19 +79,6 @@ pub fn home() -> Html {
 
     html! {
         <>
-            <Card title={"文章"}>
-                if let Ok(user) = user {
-                    if user.is_admin {
-                        <button style="margin-bottom: 1%;" onclick={Callback::from(move |_| navigator.push(&Route::NewArticle))}>{ "新增文章" }</button>
-                    }
-                }
-                <input type="text" placeholder="搜索文章" oninput={search_article} style="margin-bottom: 1%;"/>
-                if *loading {
-                    <p>{ "Loading..." }</p>
-                } else {
-                    <ArticlePreview articles={(*articles).clone()}/>
-                }
-            < /Card>
         </>
     }
 }
